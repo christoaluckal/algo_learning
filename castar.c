@@ -109,6 +109,8 @@ struct List *removeFromList(struct List **list,struct Node *node)
     prev = *list;
     curr = *list;
     next = curr->next;
+    printf("BEFORE\n %d %d\n",node->position->x,node->position->y);
+    printList(&head);
     if(next==NULL)
     {
         prev = NULL;
@@ -125,14 +127,28 @@ struct List *removeFromList(struct List **list,struct Node *node)
         prev = curr;
         curr = curr->next;
         next = curr->next;
-        if(next==NULL)
-        {
-            printf("Not present\n");
-            return NULL;
-        }
+        // if(next==NULL)
+        // {
+        //     printf("Not present\n");
+        //     return NULL;
+        // }
     }
     prev->next=next;
+    printf("AFTER\n");
+    printList(&head);
     return head;
+}
+
+void printMaze(int maze[100][100])
+{
+    for(int i=0;i<10;i++)
+    {
+        for(int j=0;j<10;j++)
+        {
+            printf("%d",maze[i][j]);
+        }
+        printf("\n");
+    }
 }
 
 struct Node* makechildNode(int posx,int posy,int g,double h){
@@ -158,8 +174,8 @@ int main(){
 
     start_val->x = 0;
     start_val->y = 0;
-    end_val->x = 2;
-    end_val->y = 3;
+    end_val->x = 7;
+    end_val->y = 2;
     start->position = start_val;
     end->position = end_val;
 
@@ -171,7 +187,7 @@ int main(){
     while(getListLength(possible)>0)
     // for(int iteration=0;iteration<2;iteration++)
     {
-        printf("\n");
+        // printf("\n");
         // printf("SEARCHING\n");
         struct List *p_iter = NULL;
         struct List *min_ptr = NULL;
@@ -187,13 +203,19 @@ int main(){
             p_iter = p_iter->next;
         }
         struct Node *optnode = makechildNode(min_ptr->val->position->x,min_ptr->val->position->y,min_ptr->val->g,euclidean(min_ptr->val->position,end->position));
-        printf("OPTIMAL NODE:(%d ,%d) |%lf\n",optnode->position->x,optnode->position->y,optnode->f);
+        // printf("OPTIMAL NODE:(%d ,%d) |%lf\n",optnode->position->x,optnode->position->y,optnode->f);
         optimal = pushToList(&optimal,optnode);
-        possible = removeFromList(&possible,optnode);
-        printf("POSSIBLE:");
-        printList(&possible);
-        printf("OPTIMAL:");
-        printList(&optimal);
+        maze[optnode->position->y][optnode->position->x]=3;
+        printf("----------------------------------------\n");
+        printMaze(maze);
+        printf("----------------------------------------\n");
+
+        // free(possible);
+        possible = NULL;
+        // printf("POSSIBLE:");
+        // printList(&possible);
+        // printf("OPTIMAL:");
+        // printList(&optimal);
         if(min_ptr->val->position->x==end->position->x && min_ptr->val->position->y==end->position->y)
         {
             printf("ENDED\n");
@@ -219,8 +241,12 @@ int main(){
                     exit(-1);
                 }
                 else{
+                    if(maze[posy][posx]!=1)
+                    {
                     struct Node* posChild = makechildNode(posx,posy,min_ptr->val->g+1,euclidean(&temp,end->position));
                     possible = pushToList(&possible,posChild);
+                    }
+
                 }
                 
             }
