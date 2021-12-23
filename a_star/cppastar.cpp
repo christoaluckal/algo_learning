@@ -67,7 +67,7 @@ int main()
     Node end{};
     start.position = {0,0};
     end.position = {10,0};
-
+    int test_count = 0;
     std::vector<Node> optimal{};
     std::vector<Node> possible{};
 
@@ -97,6 +97,7 @@ int main()
         if(currentnode.position == end.position){
             std::cout << "ENDED" << '\n';
             exit(0);
+            break;
         }
         
         std::vector<positional> directions = {{-1,0},{1,0},{0,-1},{0,1},{-1,-1},{1,-1},{-1,1},{1,1}};
@@ -123,5 +124,8 @@ int main()
         // print_1d_vec(possible);
         print_2d_vec(maze);
         std::cout << "\n\n";
+        test_count++;
+    std::cout << test_count << '\n';
+
     }
 }

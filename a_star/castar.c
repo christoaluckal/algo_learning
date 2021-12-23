@@ -11,7 +11,6 @@ struct Node{
     int g;
     double h;
     struct PosData *position;
-    // struct Node *parent;
 };
 
 struct List{
@@ -53,30 +52,42 @@ int getListLength(struct List *list)
 
 void printList(struct List **list){
     struct List *curr = *list;
-    // printf("%p",(void *)curr);
     while(curr!=NULL)
     {
         printf("(%d,%d|%lf)-",curr->val->position->x,curr->val->position->y,curr->val->f);
         curr = curr->next;
     }
     printf("\n");
-    // printf("\n");
 }
 
+
+int isInList(struct List *list,struct Node *node)
+{
+    struct List *head = list;
+
+    int count = 0;
+    while(head!=NULL)
+    {
+        if(head->val->position->x== node->position->x && head->val->position->y == node->position->y)
+        {
+            return count;
+        }
+        else{
+            count++;
+        }
+        head = head->next;
+    }
+    return -1;
+}
 struct List* pushToList(struct List **list,struct Node *node)
 {
-    // printf("I_LIST:%p %p %p\n",*list,list,&list);
     struct List *head = NULL;
     head = *list;
-    // printf("I_HEAD:%p %p\n",head,&head);
     struct List *curr = NULL;
     curr = *list;
-    // printf("I_CURR:%p %p\n",curr,&curr);
-
     struct List *new = NULL;
     new = (struct List*)malloc(sizeof(struct List));
     new->next = NULL;
-    // printf("I_NEW:%p %p\n",new,&new);
     if(head==NULL)
     {
         *list = new;
@@ -84,58 +95,79 @@ struct List* pushToList(struct List **list,struct Node *node)
         head->val = node;
         head->next = NULL;
     }
-    else{  
-    while(curr->next!=NULL)
-    {
-        curr = curr->next;
+    else{
+        int location = 0;
+        location = isInList(head,node);
+        if(location==-1)
+        {
+            while(curr->next!=NULL)
+            {
+                curr = curr->next;
+            }
+            curr->next = new;
+            curr = curr->next;
+            curr->val = node;
+            curr->next = NULL;
+            }
+        else{
+            for(int i=0;i<location;i++)
+            {
+                curr = curr->next;
+            }
+        }
     }
-    curr->next = new;
-    curr = curr->next;
-    curr->val = node;
-    curr->next = NULL;
-    }
-    // printf("I_HEAD2:%p %p\n",head,&head);
-
     return head;
 }
 
+
 struct List *removeFromList(struct List **list,struct Node *node)
 {
-    struct List *prev = NULL;
-    struct List *curr = NULL;
-    struct List *next = NULL;
     struct List *head = NULL;
     head = *list;
-    prev = *list;
-    curr = *list;
-    next = curr->next;
-    printf("BEFORE\n %d %d\n",node->position->x,node->position->y);
-    printList(&head);
-    if(next==NULL)
+    int location = 0;
+    location = isInList(head,node);
+    int listLength = getListLength(head);
+    if(location>=0)
     {
-        prev = NULL;
-        curr = NULL;
-        next = NULL;
-        return curr;
+        if(listLength==1)
+        {
+            head = NULL;
+            return head;
+        }
+        else if (listLength==2)
+        {
+            if(location==1)
+            {
+                head = head->next;
+            }
+            else{
+                head->next = NULL;
+            }
+            return head;
+        }
+        else{
+            struct List *curr = *list;
+            struct List *prev = *list;
+            struct List *next = *list;
+            while(location>0)
+            {
+                prev = curr;
+                curr = curr->next;
+                location--;
+            }
+            next = curr->next;
+            if(next==NULL)
+            {
+                prev->next = NULL;
+            }
+            else
+            {
+                prev->next = next;
+                curr = NULL;
+            }
+        }
+
     }
-    if(curr->val->position->x== node->position->x && curr->val->position->y == node->position->y)
-    {
-        return next;
-    }
-    while(curr->val->position->x!= node->position->x && curr->val->position->y != node->position->y && next!=NULL)
-    {
-        prev = curr;
-        curr = curr->next;
-        next = curr->next;
-        // if(next==NULL)
-        // {
-        //     printf("Not present\n");
-        //     return NULL;
-        // }
-    }
-    prev->next=next;
-    printf("AFTER\n");
-    printList(&head);
     return head;
 }
 
@@ -162,10 +194,14 @@ struct Node* makechildNode(int posx,int posy,int g,double h){
     return child;
 }
 
+void nullList (struct List **list)
+{
+    *list = NULL;
+}
+
 int main(){
     struct Node *start = NULL,*end = NULL;
     start = (struct Node*)malloc(sizeof(struct Node));
-    // printf("%p %p\n",start,&start);
     end = (struct Node*)malloc(sizeof(struct Node));
     start->f=0,start->g=0,start->h = 0;
     struct PosData *start_val,*end_val;
@@ -183,12 +219,12 @@ int main(){
 
     struct List *possible = NULL;
 
+    int test_count = 0;
+
     possible = pushToList(&possible,start);
     while(getListLength(possible)>0)
-    // for(int iteration=0;iteration<2;iteration++)
+    // for(int iteration=0;iteration<30;iteration++)
     {
-        // printf("\n");
-        // printf("SEARCHING\n");
         struct List *p_iter = NULL;
         struct List *min_ptr = NULL;
         p_iter = possible;
@@ -203,25 +239,19 @@ int main(){
             p_iter = p_iter->next;
         }
         struct Node *optnode = makechildNode(min_ptr->val->position->x,min_ptr->val->position->y,min_ptr->val->g,euclidean(min_ptr->val->position,end->position));
-        // printf("OPTIMAL NODE:(%d ,%d) |%lf\n",optnode->position->x,optnode->position->y,optnode->f);
+        printf("OPTIMAL NODE:(%d ,%d) |%lf\n",optnode->position->x,optnode->position->y,optnode->f);
         optimal = pushToList(&optimal,optnode);
         maze[optnode->position->y][optnode->position->x]=3;
+        possible = removeFromList(&possible,optnode);
         printf("----------------------------------------\n");
         printMaze(maze);
         printf("----------------------------------------\n");
-
-        // free(possible);
-        possible = NULL;
-        // printf("POSSIBLE:");
-        // printList(&possible);
-        // printf("OPTIMAL:");
-        // printList(&optimal);
+        nullList(&possible);
         if(min_ptr->val->position->x==end->position->x && min_ptr->val->position->y==end->position->y)
         {
             printf("ENDED\n");
             break;
         }
-
         int directions[8][2] = {{1,0},{-1,0},{0,-1},{0,1},{-1,-1},{1,-1},{-1,1},{1,1}};
         for(int i=0;i<8;i++)
         {
@@ -232,40 +262,27 @@ int main(){
             struct PosData temp;
             temp.x = posx;
             temp.y = posy;
-            // if(posx >= 0 && posx < 10 && posy >=0 && posy < 10 && maze[posy][posx]!=1)
+            struct Node* posChild = makechildNode(posx,posy,min_ptr->val->g+1,euclidean(&temp,end->position));
             if(posx >= 0 && posx < 10 && posy >=0 && posy < 10)
             {
-                if(euclidean(&temp,end->position)==0 && maze[posy][posx]==1)
+                if(posChild->h==0 && maze[posy][posx]==1)
                 {
                     printf("NOT POSSIBLE\n");
                     exit(-1);
                 }
                 else{
-                    if(maze[posy][posx]!=1)
+                    if(maze[posy][posx]!=1 && isInList(optimal,posChild)==-1)
                     {
-                    struct Node* posChild = makechildNode(posx,posy,min_ptr->val->g+1,euclidean(&temp,end->position));
-                    possible = pushToList(&possible,posChild);
+                        possible = pushToList(&possible,posChild);
                     }
 
                 }
                 
             }
-        }        
+        }
+        test_count++;      
     }
+    printf("STEPS: %d\n",test_count);
     printList(&optimal);
-    // printf("%p\n",(void *)possible);
     return 0;
 }
-
-    // struct List *possible = NULL;
-    // // printf("START:%p %p\n",start,&start);
-
-    // // printf("POSSIBLE 0:%p %p\n",possible,&possible);
-    // possible = pushToList(&possible,start);
-    // // printf("POSSIBLE 1:%p %p\n",possible,&possible);
-    // // printf("%p\n",(void *)possible);
-    // // printList(&possible);
-    // // printf("\n\n");
-    // // printf("POSSIBLE 2:%p %p\n",possible,&possible);
-    // optimal = pushToList(&optimal,start);
-    // // printf("%p\n",(void *)possible);
